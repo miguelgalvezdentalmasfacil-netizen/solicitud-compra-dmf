@@ -1205,11 +1205,16 @@
     estadoMsg.className = 'ok';
     estadoResultados.innerHTML = list.map(s => {
       const completo = simplePhase(s.estatus) === 2;
+      const solicitante = (pickField(s, ['solicitante', 'Solicitante'], 'solicitante') || s.solicitante || '').toString().trim();
+      const proveedor = (pickField(s, ['proveedor', 'Proveedor'], 'proveedor') || s.proveedor || '').toString().trim();
+      const tituloParts = [solicitante, proveedor].filter(Boolean);
+      const titulo = tituloParts.length > 0 ? tituloParts.join(' · ') : (s.motivo ? s.motivo.trim() : 'Pedido del día');
+
       return `
         <div class="estado-card">
           <div class="estado-card-head">
             <div>
-              <div class="motivo">Pedido del día</div>
+              <div class="motivo">${escapeHtml(titulo)}</div>
               <div class="fecha">${s.fecha ? escapeHtml(s.fecha) : ''}</div>
             </div>
             <span class="estado-current-badge">${escapeHtml(simpleLabel(s.estatus))}</span>
