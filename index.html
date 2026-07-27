@@ -493,26 +493,53 @@
 
   .estado-card{
     background:#fff; border:1px solid var(--border); border-radius:14px;
-    padding:20px 22px; margin-bottom:16px;
+    padding:18px 20px; margin-bottom:16px; transition:box-shadow .2s ease, border-color .2s ease;
+  }
+  .estado-card:hover{
+    border-color:#cfd6e2; box-shadow:0 4px 12px rgba(20,30,50,.03);
   }
   .estado-card-head{
-    display:flex; justify-content:space-between; align-items:flex-start;
-    gap:12px; margin-bottom:16px;
+    display:flex; justify-content:space-between; align-items:center;
+    gap:12px; cursor:pointer; user-select:none;
   }
-  .estado-card-head .motivo{ font-size:14px; font-weight:700; color:var(--ink); }
-  .estado-card-head .fecha{ font-size:12px; color:var(--ink-faint); margin-top:2px; }
+  .estado-card-head-left{
+    display:flex; flex-direction:column; gap:2px; flex:1; min-width:0;
+  }
+  .estado-card-head-left .motivo{ font-size:14px; font-weight:700; color:var(--ink); word-break:break-word; }
+  .estado-card-head-left .fecha{ font-size:12px; color:var(--ink-faint); margin-top:2px; }
+  .estado-card-head-right{
+    display:flex; align-items:center; gap:10px; flex-shrink:0;
+  }
   .estado-current-badge{
     font-size:11.5px; font-weight:700; padding:5px 12px; border-radius:999px;
     background:var(--navy); color:#fff; white-space:nowrap;
   }
+  .estado-toggle-icon{
+    width:28px; height:28px; border-radius:50%; background:#f2f4f7;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--ink-soft); transition:transform .25s ease, background .2s ease, color .2s ease;
+  }
+  .estado-card-head:hover .estado-toggle-icon{
+    background:var(--blue-soft); color:var(--blue);
+  }
+  .estado-card.is-open .estado-toggle-icon{
+    transform:rotate(180deg);
+  }
+  .estado-card-body{
+    display:none;
+    margin-top:16px; padding-top:16px; border-top:1px solid var(--border);
+  }
+  .estado-card.is-open .estado-card-body{
+    display:block;
+  }
   .estado-stepper{ display:flex; flex-direction:column; gap:0; }
   .estado-step{
     display:flex; align-items:flex-start; gap:12px; position:relative;
-    padding-bottom:18px;
+    padding-bottom:14px;
   }
   .estado-step:last-child{ padding-bottom:0; }
   .estado-step .dot{
-    width:20px; height:20px; border-radius:50%; flex:none;
+    width:22px; height:22px; border-radius:50%; flex:none;
     display:flex; align-items:center; justify-content:center;
     font-size:11px; font-weight:700; z-index:1;
     background:#e4e8ee; color:var(--ink-faint);
@@ -520,14 +547,14 @@
   .estado-step.done .dot{ background:var(--green); color:#fff; }
   .estado-step.current .dot{ background:var(--navy); color:#fff; }
   .estado-step:not(:last-child)::before{
-    content:''; position:absolute; left:9px; top:20px; bottom:0;
+    content:''; position:absolute; left:10px; top:22px; bottom:0;
     width:2px; background:#e4e8ee;
   }
   .estado-step.done:not(:last-child)::before{ background:var(--green); }
   .estado-step .label{
-    font-size:13px; font-weight:600; color:var(--ink-faint); padding-top:1px;
+    font-size:13px; font-weight:600; color:var(--ink-faint); padding-top:2px;
   }
-  .estado-step.done .label, .estado-step.current .label{ color:var(--ink); }
+  .estado-step.done .label, .estado-step.current .label{ color:var(--ink); font-weight:700; }
   .estado-completo{
     margin-top:18px; padding-top:16px; border-top:1px solid var(--border);
     display:flex; align-items:center; justify-content:center; gap:8px;
@@ -1149,17 +1176,12 @@
   });
 
   const STATUS_ORDER = ['Pendiente','En revisión','Cotizando','Autorizado','Comprado','Entregado','Facturado','Pagado'];
-  const SIMPLE_STEPS = ['Pendiente','Revisión','Pagado'];
 
-  function simplePhase(estatusActual){
-    const idx = STATUS_ORDER.indexOf(estatusActual);
-    if (idx <= 0) return 0;          // Pendiente
-    if (idx >= STATUS_ORDER.length - 1) return 2; // Pagado
-    return 1;                        // todo lo intermedio cuenta como "Revisión"
-  }
-
-  function simpleLabel(estatusActual){
-    return SIMPLE_STEPS[simplePhase(estatusActual)];
+  function getStatusIndex(estatusActual){
+    if (!estatusActual) return 0;
+    const norm = String(estatusActual).trim().toLowerCase();
+    const idx = STATUS_ORDER.findIndex(s => s.toLowerCase() === norm);
+    return idx >= 0 ? idx : 0;
   }
 
   function pickField(s, keys, fuzzyContains, fuzzyExclude){
@@ -1186,12 +1208,29 @@
   const estadoResultados = document.getElementById('estadoResultados');
 
   function renderStepper(estatusActual){
-    const idx = simplePhase(estatusActual);
-    return SIMPLE_STEPS.map((s, i) => {
-      const cls = i < idx ? 'done' : (i === idx ? 'current' : '');
-      const mark = i < idx ? '✓' : (i + 1);
-      return `<div class="estado-step ${cls}"><div class="dot">${i < idx ? '✓' : mark}</div><div class="label">${s}</div></div>`;
+    const currentIdx = getStatusIndex(estatusActual);
+    return STATUS_ORDER.map((s, i) => {
+      const isDone = i < currentIdx;
+      const isCurrent = i === currentIdx;
+      const cls = isDone ? 'done' : (isCurrent ? 'current' : '');
+      const mark = isDone ? '✓' : (i + 1);
+      return `<div class="estado-step ${cls}"><div class="dot">${mark}</div><div class="label">${escapeHtml(s)}</div></div>`;
     }).join('');
+  }
+
+  const openCardIds = new Set();
+
+  function toggleEstadoCard(headEl){
+    const card = headEl.closest('.estado-card');
+    if (!card) return;
+    const cardId = card.getAttribute('data-card-id');
+    if (card.classList.contains('is-open')) {
+      card.classList.remove('is-open');
+      if (cardId) openCardIds.delete(cardId);
+    } else {
+      card.classList.add('is-open');
+      if (cardId) openCardIds.add(cardId);
+    }
   }
 
   function renderSolicitudes(list){
@@ -1203,24 +1242,39 @@
     }
     estadoMsg.textContent = `Se encontraron ${list.length} solicitud(es).`;
     estadoMsg.className = 'ok';
-    estadoResultados.innerHTML = list.map(s => {
-      const completo = simplePhase(s.estatus) === 2;
+    estadoResultados.innerHTML = list.map((s, idx) => {
       const solicitante = (pickField(s, ['solicitante', 'Solicitante'], 'solicitante') || s.solicitante || '').toString().trim();
       const proveedor = (pickField(s, ['proveedor', 'Proveedor'], 'proveedor') || s.proveedor || '').toString().trim();
       const tituloParts = [solicitante, proveedor].filter(Boolean);
       const titulo = tituloParts.length > 0 ? tituloParts.join(' · ') : (s.motivo ? s.motivo.trim() : 'Pedido del día');
 
+      const currentIdx = getStatusIndex(s.estatus);
+      const estatusTexto = s.estatus ? String(s.estatus).trim() : STATUS_ORDER[currentIdx];
+      const esPagado = estatusTexto.toLowerCase() === 'pagado' || currentIdx === STATUS_ORDER.length - 1;
+
+      const cardId = s.id ? String(s.id) : `card_${idx}_${(s.fecha||'').replace(/\s+/g,'')}`;
+      const isOpen = openCardIds.has(cardId);
+
       return `
-        <div class="estado-card">
-          <div class="estado-card-head">
-            <div>
+        <div class="estado-card ${isOpen ? 'is-open' : ''}" data-card-id="${cardId}">
+          <div class="estado-card-head" onclick="toggleEstadoCard(this)">
+            <div class="estado-card-head-left">
               <div class="motivo">${escapeHtml(titulo)}</div>
               <div class="fecha">${s.fecha ? escapeHtml(s.fecha) : ''}</div>
             </div>
-            <span class="estado-current-badge">${escapeHtml(simpleLabel(s.estatus))}</span>
+            <div class="estado-card-head-right">
+              <span class="estado-current-badge">${escapeHtml(estatusTexto)}</span>
+              <div class="estado-toggle-icon" title="Ver detalle de estatus">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </div>
+            </div>
           </div>
-          <div class="estado-stepper" style="margin-top:16px;">${renderStepper(s.estatus)}</div>
-          ${completo ? '<div class="estado-completo"><span class="check">✓</span><span class="txt">Pedido Realizado</span></div>' : ''}
+          <div class="estado-card-body">
+            <div class="estado-stepper">${renderStepper(s.estatus)}</div>
+            ${esPagado ? '<div class="estado-completo"><span class="check">✓</span><span class="txt">Pedido Realizado</span></div>' : ''}
+          </div>
         </div>`;
     }).join('');
   }
