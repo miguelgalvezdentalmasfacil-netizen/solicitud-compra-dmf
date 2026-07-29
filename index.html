@@ -847,6 +847,7 @@
   </div>
 </div>
 
+<script src="config-envio.js"></script>
 <script>
   function updateTopbarHeight(){
     const topbar = document.querySelector('.topbar');
@@ -1121,32 +1122,42 @@
 
       submitBtn.textContent = 'Enviando...';
 
-      const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
-      const result = await res.json();
+      await enviarPedido(data, {
+        onIntentoFallido: (intento, err) => {
+          console.warn(`Intento ${intento} falló:`, err);
+        },
+        onReintentando: (siguienteIntento, esperaMs) => {
+          const segs = Math.round(esperaMs / 1000);
+          submitBtn.textContent = `Reintentando (${siguienteIntento}/${ENVIO_CONFIG.maxReintentos}) en ${segs}s...`;
+          formMsg.textContent = `Error de conexión. Reintentando intento ${siguienteIntento} de ${ENVIO_CONFIG.maxReintentos} en ${segs}s...`;
+          formMsg.className = 'err';
+        },
+        onExito: (result) => {
+          const folioText = '#' + String(result.folio || 0).padStart(4,'0');
+          folioNo.textContent = folioText;
+          folioNo.classList.add('assigned');
+          statusBadge.textContent = 'Enviada';
+          statusBadge.classList.add('ok');
+          formMsg.textContent = 'Solicitud registrada correctamente.';
+          formMsg.className = 'ok';
 
-      if(result.success){
-        const folioText = '#' + String(result.folio).padStart(4,'0');
-        folioNo.textContent = folioText;
-        folioNo.classList.add('assigned');
-        statusBadge.textContent = 'Enviada';
-        statusBadge.classList.add('ok');
-        formMsg.textContent = 'Solicitud registrada correctamente.';
-        formMsg.className = 'ok';
-
-        form.reset();
-        cotizacionField.clear();
-        facturaField.clear();
-        articuloFiles = [];
-        renderArticuloList();
-        ['tkSucursal','tkSolicitante','tkProveedor','tkUrgencia','tkCantidad'].forEach(id => document.getElementById(id).textContent = '—');
-        heroSucursal.textContent = 'Sin definir';
-        heroUrgencia.textContent = 'Sin definir';
-        heroUrgencia.classList.remove('filled');
-      } else {
-        throw new Error(result.error || 'Error desconocido');
-      }
+          form.reset();
+          cotizacionField.clear();
+          facturaField.clear();
+          articuloFiles = [];
+          renderArticuloList();
+          ['tkSucursal','tkSolicitante','tkProveedor','tkUrgencia','tkCantidad'].forEach(id => document.getElementById(id).textContent = '—');
+          heroSucursal.textContent = 'Sin definir';
+          heroUrgencia.textContent = 'Sin definir';
+          heroUrgencia.classList.remove('filled');
+        },
+        onErrorFinal: (err) => {
+          formMsg.textContent = 'No se pudo enviar la solicitud: ' + (err.message || 'Error de conexión');
+          formMsg.className = 'err';
+        }
+      });
     } catch(err){
-      formMsg.textContent = 'No se pudo enviar la solicitud: ' + err.message;
+      formMsg.textContent = 'No se pudo procesar la solicitud: ' + err.message;
       formMsg.className = 'err';
     } finally {
       submitBtn.disabled = false;
