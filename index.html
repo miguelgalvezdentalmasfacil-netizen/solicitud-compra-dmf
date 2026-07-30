@@ -582,30 +582,10 @@
       <div class="tagline">TU CONEXIÓN A LA SALUD</div>
     </div>
   </div>
-  <div class="header-right">
-    <span class="chip">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>
-      Folio automático al enviar
-    </span>
-    <button type="button" class="icon-btn" id="settingsBtn" title="Configurar URL del Apps Script">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
-    </button>
-  </div>
+
 </div>
 
-<div class="modal-overlay" id="settingsOverlay">
-  <div class="modal">
-    <h3>Configuración de la automatización</h3>
-    <p>Pega la URL de tu Web App de Apps Script (Implementar &gt; Nueva implementación &gt; Aplicación web) para activar el envío automático hacia la Bitácora de Folios.</p>
-    <label for="scriptUrlInput">URL del Apps Script</label>
-    <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
-    <span id="settingsMsg"></span>
-    <div class="modal-actions">
-      <button type="button" class="btn-secondary" id="cancelSettingsBtn">Cancelar</button>
-      <button type="button" class="btn-primary" id="saveSettingsBtn">Guardar</button>
-    </div>
-  </div>
-</div>
+
 
 <div class="pagetabs">
   <button type="button" class="pagetab active" id="pagetabNueva">Nueva solicitud</button>
@@ -858,8 +838,7 @@
   window.addEventListener('resize', updateTopbarHeight);
   window.addEventListener('load', updateTopbarHeight);
 
-  const STORAGE_KEY = 'bfc_script_url';
-  let SCRIPT_URL = localStorage.getItem(STORAGE_KEY) || '';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz1Stkbbd9f4-KQL0l4D5PT3CbhH4_Uh9uJHVyePsZ1HMc8bV_PyPB8yGl6Mk3H4UvB/exec';
   const MAX_FILE_MB = 10;
   const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
   const MAX_ARTICULO_FILES = 5;
@@ -909,44 +888,6 @@
       heroUrgencia.textContent = r.value;
       heroUrgencia.classList.add('filled');
     });
-  });
-
-  const settingsBtn = document.getElementById('settingsBtn');
-  const settingsOverlay = document.getElementById('settingsOverlay');
-  const scriptUrlInput = document.getElementById('scriptUrlInput');
-  const settingsMsg = document.getElementById('settingsMsg');
-  const saveSettingsBtn = document.getElementById('saveSettingsBtn');
-  const cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
-
-  function openSettings(){
-    scriptUrlInput.value = SCRIPT_URL;
-    settingsMsg.textContent = '';
-    settingsMsg.className = '';
-    settingsOverlay.classList.add('open');
-    scriptUrlInput.focus();
-  }
-  function closeSettings(){
-    settingsOverlay.classList.remove('open');
-  }
-
-  settingsBtn.addEventListener('click', openSettings);
-  cancelSettingsBtn.addEventListener('click', closeSettings);
-  settingsOverlay.addEventListener('click', (e) => {
-    if (e.target === settingsOverlay) closeSettings();
-  });
-
-  saveSettingsBtn.addEventListener('click', () => {
-    const url = scriptUrlInput.value.trim();
-    if (url.indexOf('http') !== 0){
-      settingsMsg.textContent = 'Ingresa una URL válida (debe empezar con https://).';
-      settingsMsg.className = 'err';
-      return;
-    }
-    SCRIPT_URL = url;
-    localStorage.setItem(STORAGE_KEY, url);
-    settingsMsg.textContent = 'URL guardada correctamente.';
-    settingsMsg.className = 'ok';
-    setTimeout(closeSettings, 700);
   });
 
   document.querySelectorAll('.tab').forEach(tab => {
