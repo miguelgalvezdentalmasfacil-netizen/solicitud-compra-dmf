@@ -1308,8 +1308,25 @@
       estadoResultados.innerHTML = '';
     }
     try {
-      const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'getStatus', email: email }) });
-      const result = await res.json();
+      let result;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'getStatus', email: email }) });
+        const text = await res.text();
+        
+        // Si Google pierde el POST y responde con texto HTML (doGet), reintentamos en silencio
+        if (text.includes('El servicio')) {
+          if (attempt === 3) throw new Error('Conexión inestable con Google. Intenta buscar de nuevo.');
+          await new Promise(r => setTimeout(r, 1500));
+          continue;
+        }
+        
+        try {
+          result = JSON.parse(text);
+        } catch (e) {
+          throw new Error('Respuesta inesperada del servidor (error de red).');
+        }
+        break; // Éxito
+      }
       console.log('Respuesta getStatus:', result);
       if (result.solicitudes && result.solicitudes[0]) {
         console.log('Columnas disponibles en cada solicitud:', Object.keys(result.solicitudes[0]));
