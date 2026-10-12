@@ -1202,24 +1202,6 @@
         // Mostramos la caja del botón de descarga
         document.getElementById('tkActionBox').style.display = 'block';
 
-        // Poblamos la plantilla para el PDF
-        const logoImg = document.querySelector('.logo-mark img');
-        if (logoImg) document.getElementById('pdfLogoImg').src = logoImg.src;
-
-        document.getElementById('pdfFolioNo').textContent = 'N° ' + String(folioNumber).padStart(4,'0');
-        document.getElementById('pdfFooterFolio').textContent = 'Folio N° ' + String(folioNumber).padStart(4,'0');
-        document.getElementById('pdfFecha').textContent = fechaHoraStr;
-        document.getElementById('pdfSucursal').textContent = data.sucursal || '—';
-        document.getElementById('pdfSolicitante').textContent = data.solicitante || '—';
-        document.getElementById('pdfPuesto').textContent = data.puesto || '—';
-        document.getElementById('pdfEmail').textContent = data.email || '—';
-        document.getElementById('pdfUrgencia').textContent = data.urgencia || '—';
-        document.getElementById('pdfProveedor').textContent = data.proveedor || '—';
-        document.getElementById('pdfCantidad').textContent = cantFormatted;
-        document.getElementById('pdfMotivo').textContent = data.motivo || '—';
-        document.getElementById('pdfCotizacion').innerHTML = data.cotizacion?.url ? `<a href="${data.cotizacion.url}" target="_blank" style="color:#0b3d78; font-weight:600;">Ver cotización</a>` : '<span style="color:#8b93a1;">No adjuntada</span>';
-        document.getElementById('pdfFactura').innerHTML = data.factura?.url ? `<a href="${data.factura.url}" target="_blank" style="color:#0b3d78; font-weight:600;">Ver factura</a>` : '<span style="color:#8b93a1;">No adjuntada</span>';
-        document.getElementById('pdfArticulos').innerHTML = (data.articulo || []).length ? data.articulo.map((a, i) => `<a href="${a.url}" target="_blank" style="color:#0b3d78; font-weight:600; display:inline-block; margin-right:8px;">Artículo ${i+1}</a>`).join('') : '<span style="color:#8b93a1;">No adjuntados</span>';
 
         const folioPad = String(folioNumber).padStart(4,'0');
         const copiaData = Object.assign({}, data);
