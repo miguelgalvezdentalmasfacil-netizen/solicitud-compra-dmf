@@ -482,13 +482,6 @@
   }
   .btn-download-pdf:hover{background:var(--navy-deep);}
   .btn-download-pdf:active{transform:translateY(1px);}
-  .backup-status{
-    margin-top:8px;
-    font-size:11.5px;
-    font-weight:600;
-    color:var(--green);
-    text-align:center;
-  }
 
   .pagetabs{
     display:flex; gap:8px;
@@ -851,7 +844,6 @@
         </svg>
         Descargar comprobante en PDF
       </button>
-      <div id="cloudinaryBackupStatus" class="backup-status">✓ Respaldo automático guardado</div>
     </div>
   </div>
 
@@ -1534,9 +1526,16 @@
     doc.setLineWidth(0.5);
     doc.line(margin, y + 1.5, pageWidth - margin, y + 1.5);
 
+    let cantFormatted = '—';
+    if (reqData.cantidad) {
+      const cleanNum = String(reqData.cantidad).replace(/[$,]/g, '').trim();
+      const parsed = parseFloat(cleanNum);
+      cantFormatted = !isNaN(parsed)
+        ? '$' + parsed.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : String(reqData.cantidad);
+    }
+
     y += 4;
-    const cantFormatted = reqData.cantidad ? ('$' + parseFloat(reqData.cantidad).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })) : '—';
-    
     const datos = [
       ['Sucursal', reqData.sucursal || '—'],
       ['Solicitante', reqData.solicitante || '—'],
@@ -1704,10 +1703,7 @@
   }
 
   async function respaldarPdfEnCloudinary(folioPad, reqData, fechaStr){
-    const statusEl = document.getElementById('cloudinaryBackupStatus');
     try {
-      if (statusEl) statusEl.textContent = 'Guardando respaldo en Cloudinary...';
-
       const doc = generarPdfComprobante(folioPad, reqData, fechaStr);
       const pdfBlob = doc.output('blob');
 
@@ -1724,15 +1720,9 @@
       const carpetaDinamica = `Cotizaciones realizadas/${hoy.getFullYear()}/${meses[hoy.getMonth()]}`;
       formData.append('folder', carpetaDinamica);
 
-      const res = await fetch(url, { method: 'POST', body: formData });
-      if (res.ok) {
-        if (statusEl) statusEl.textContent = '✓ Respaldo guardado en Cloudinary';
-      } else {
-        if (statusEl) statusEl.textContent = '✓ Comprobante listo para descargar';
-      }
+      await fetch(url, { method: 'POST', body: formData });
     } catch(err) {
       console.warn('Respaldo silencioso en Cloudinary omitido:', err);
-      if (statusEl) statusEl.textContent = '✓ Comprobante listo para descargar';
     }
   }
 </script>
