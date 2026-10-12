@@ -1476,62 +1476,80 @@
   // ========================================================
   // COMPROBANTE PDF Y RESPALDO EN CLOUDINARY
   // ========================================================
-  function descargarComprobantePdf(folioPad){
-    const element = document.getElementById('comprobantePdfTemplate');
-    if (!element) return;
+  function prepararElementoParaPdf(){
+    const template = document.getElementById('comprobantePdfTemplate');
+    if (!template) return null;
     
-    element.style.display = 'block';
+    // Clonamos para que html2canvas lo capture en posición visible exacta sin saltos
+    const clone = template.cloneNode(true);
+    clone.id = 'comprobantePdfClone';
+    clone.style.display = 'block';
+    clone.style.position = 'fixed';
+    clone.style.top = '0';
+    clone.style.left = '0';
+    clone.style.width = '750px';
+    clone.style.zIndex = '999999';
+    clone.style.background = '#ffffff';
+    clone.style.margin = '0';
+    document.body.appendChild(clone);
+    return clone;
+  }
+
+  function descargarComprobantePdf(folioPad){
+    const btn = document.getElementById('btnDescargarPdf');
+    const originalText = btn.innerHTML;
+    btn.textContent = 'Generando PDF...';
+    btn.disabled = true;
+
+    const clone = prepararElementoParaPdf();
+    if (!clone) return;
 
     const opt = {
-      margin: [10, 10, 10, 10],
+      margin: [8, 8, 8, 8],
       filename: `Solicitud_${folioPad}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
+      html2canvas: { scale: 2, useCORS: true, scrollY: 0, scrollX: 0 },
       jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
     };
 
     if (window.html2pdf) {
-      const btn = document.getElementById('btnDescargarPdf');
-      const originalText = btn.innerHTML;
-      btn.textContent = 'Generando PDF...';
-      btn.disabled = true;
-
-      window.html2pdf().set(opt).from(element).save().then(() => {
+      window.html2pdf().set(opt).from(clone).save().then(() => {
         btn.innerHTML = originalText;
         btn.disabled = false;
-        element.style.display = 'none';
+        if (clone && clone.parentNode) clone.parentNode.removeChild(clone);
       }).catch(err => {
         console.error('Error al generar PDF:', err);
         btn.innerHTML = originalText;
         btn.disabled = false;
-        element.style.display = 'none';
+        if (clone && clone.parentNode) clone.parentNode.removeChild(clone);
         alert('No se pudo generar el PDF automáticamente. Puedes usar la función de imprimir de tu navegador.');
       });
     } else {
-      element.style.display = 'none';
+      if (clone && clone.parentNode) clone.parentNode.removeChild(clone);
       window.print();
     }
   }
 
   async function respaldarPdfEnCloudinary(folioPad){
     const statusEl = document.getElementById('cloudinaryBackupStatus');
-    const element = document.getElementById('comprobantePdfTemplate');
-    if (!element || !window.html2pdf) return;
+    if (!window.html2pdf) return;
+
+    const clone = prepararElementoParaPdf();
+    if (!clone) return;
 
     try {
       if (statusEl) statusEl.textContent = 'Guardando respaldo en Cloudinary...';
-      element.style.display = 'block';
 
       const opt = {
-        margin: [10, 10, 10, 10],
+        margin: [8, 8, 8, 8],
         filename: `Solicitud_${folioPad}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
+        html2canvas: { scale: 2, useCORS: true, scrollY: 0, scrollX: 0 },
         jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
       };
 
-      const pdfBlob = await window.html2pdf().set(opt).from(element).output('blob');
-      element.style.display = 'none';
+      const pdfBlob = await window.html2pdf().set(opt).from(clone).output('blob');
+      if (clone && clone.parentNode) clone.parentNode.removeChild(clone);
 
       const cloudName = 'ydmgdjmh';
       const uploadPreset = 'solicitudes_dmf';
@@ -1554,14 +1572,14 @@
       }
     } catch(err) {
       console.warn('Respaldo silencioso en Cloudinary omitido:', err);
-      if (element) element.style.display = 'none';
+      if (clone && clone.parentNode) clone.parentNode.removeChild(clone);
       if (statusEl) statusEl.textContent = '✓ Comprobante listo para descargar';
     }
   }
 </script>
 
 <!-- Plantilla oculta formateada profesionalmente para generar el PDF de comprobante -->
-<div id="comprobantePdfTemplate" style="display:none; position:fixed; left:-9999px; top:0; width:750px; padding:32px 36px; font-family:'Inter', Arial, sans-serif; color:#1c2430; background:#ffffff; box-sizing:border-box;">
+<div id="comprobantePdfTemplate" style="display:none; width:750px; padding:32px 36px; font-family:'Inter', Arial, sans-serif; color:#1c2430; background:#ffffff; box-sizing:border-box;">
   <div style="border-bottom:3px solid #0b3d78; padding-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
     <div style="display:flex; align-items:center; gap:12px;">
       <img id="pdfLogoImg" src="" style="height:44px;" alt="Dental+Fácil">
